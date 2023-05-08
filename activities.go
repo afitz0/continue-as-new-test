@@ -2,6 +2,15 @@ package starter
 
 type Activities struct{}
 
-func (a *Activities) Activity(greeting string, name string) (string, error) {
-	return greeting + " " + name + "!", nil
+func (a *Activities) NilActivity() error {
+	return nil
+}
+
+func (a *Activities) LargeReturnActivity(bytes int) ([]int, error) {
+	data := []int{}
+
+	for i := 0; i < int(bytes/2); i++ {
+		data = append(data, 0)
+	}
+	return data, nil
 }
