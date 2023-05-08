@@ -12,6 +12,8 @@ import (
 	"starter/zapadapter"
 )
 
+const TEST = starter.QUERY
+
 func main() {
 	c, err := client.NewLazyClient(client.Options{
 		Logger: zapadapter.NewZapAdapter(
@@ -28,8 +30,8 @@ func main() {
 		TaskQueue: "temporal-starter",
 	}
 
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, starter.Workflow)
-	switch starter.TEST {
+	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, starter.Workflow, TEST)
+	switch TEST {
 	case starter.SIGNAL:
 		// Give enough time for the Workflow to start then yield back to the server.
 		time.Sleep(time.Duration(time.Second * 5))
@@ -60,5 +62,5 @@ func main() {
 	histLength := desc.WorkflowExecutionInfo.GetHistoryLength()
 	histSize := desc.WorkflowExecutionInfo.GetHistorySizeBytes()
 
-	log.Println(fmt.Sprintf("Workflow running test id %v finished with history length (%v) and size (%v bytes)", starter.TEST, histLength, histSize))
+	log.Println(fmt.Sprintf("Workflow running test id %v finished with history length (%v) and size (%v bytes)", TEST, histLength, histSize))
 }

@@ -18,28 +18,24 @@ const (
 	QUERY
 )
 
-const TEST = TIMER
-
-// const ITERATIONS = 50 * 1024
-const ITERATIONS = 1
-
-func Workflow(ctx workflow.Context) error {
-	ao := workflow.ActivityOptions{
-		StartToCloseTimeout: 10 * time.Second,
-		RetryPolicy: &temporal.RetryPolicy{
-			InitialInterval:    time.Second,
-			BackoffCoefficient: 1.0,
-			MaximumInterval:    10 * time.Second,
-			MaximumAttempts:    0, // 0 is infinite
-		},
-	}
-	ctx = workflow.WithActivityOptions(ctx, ao)
-
+func Workflow(ctx workflow.Context, test TestIdenfier) error {
 	logger := workflow.GetLogger(ctx)
+
+	if test == QUERY {
+		queryType := "query"
+		err := workflow.SetQueryHandler(ctx, queryType, func() (string, error) {
+			return "", nil
+		})
+		if err != nil {
+			logger.Error("failed to register query handler")
+			return err
+		}
+	}
+
 	logger.Info("Workflow started")
 
 	selector := workflow.NewSelector(ctx)
-	if TEST == SIGNAL {
+	if test == SIGNAL {
 		// Register signal handler
 		signalChannel := workflow.GetSignalChannel(ctx, "signal")
 
@@ -50,13 +46,27 @@ func Workflow(ctx workflow.Context) error {
 		})
 	}
 
+	ao := workflow.ActivityOptions{
+		StartToCloseTimeout: 10 * time.Second,
+		RetryPolicy: &temporal.RetryPolicy{
+			InitialInterval:    time.Second,
+			BackoffCoefficient: 1.0,
+			MaximumInterval:    10 * time.Second,
+			MaximumAttempts:    0, // 0 is infinite
+		},
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
 	var a *Activities
 
 	info := workflow.GetInfo(ctx)
 
-	for i := 0; i < ITERATIONS; i++ {
+	iterations := 1
+	if test == ZERO_SIZE_ACTIVITY || test == BIG_ACTIVITY {
+		iterations = 50 * 1024
+	}
+	for i := 0; i < iterations; i++ {
 		var err error
-		switch TEST {
+		switch test {
 		case ZERO_SIZE_ACTIVITY:
 			// (near) 0-sized activity. Expected that approximately 8,530 of these activities runs.
 			// Each activity execution generates 6 events: 3 for the workflow (scheduled, started,
@@ -80,11 +90,11 @@ func Workflow(ctx workflow.Context) error {
 			return err
 		}
 
-		logger.Info("Completed Activity", "number", i)
-		logger.Info("Workflow event history size", "event history length", info.GetCurrentHistoryLength())
+		logger.Debug("Completed Activity", "number", i)
+		logger.Debug("Workflow event history size", "event history length", info.GetCurrentHistoryLength())
 	}
 
-	if TEST == SIGNAL {
+	if test == SIGNAL {
 		selector.Select(ctx)
 	}
 
