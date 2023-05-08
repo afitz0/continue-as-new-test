@@ -14,7 +14,7 @@ import (
 func main() {
 	c, err := client.NewLazyClient(client.Options{
 		Logger: zapadapter.NewZapAdapter(
-			zapadapter.NewZapLogger(zapcore.DebugLevel)),
+			zapadapter.NewZapLogger(zapcore.WarnLevel)),
 	})
 	if err != nil {
 		log.Fatalln("Unable to create client", err)
