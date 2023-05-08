@@ -57,8 +57,7 @@ func main() {
 		logger.Info("Awaiting workflow completion...")
 		err = we.Get(context.Background(), nil)
 		if err != nil {
-			logger.Error("Unable to get workflow results", err)
-			os.Exit(1)
+			logger.Error("Unable to get workflow results; depending on the test this may be expected (e.g., Terminated due to exceeding history limits)", err)
 		}
 
 		desc, err := c.DescribeWorkflowExecution(context.Background(), wId, we.GetRunID())
