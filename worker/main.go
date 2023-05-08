@@ -20,7 +20,7 @@ func main() {
 	}
 	defer c.Close()
 
-	w := worker.New(c, "temporal-starter", worker.Options{})
+	w := worker.New(c, "can-test-queue", worker.Options{})
 
 	a := &starter.Activities{}
 	w.RegisterWorkflow(starter.Workflow)

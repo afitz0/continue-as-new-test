@@ -10,12 +10,16 @@ import (
 type TestIdenfier int
 
 const (
-	ZERO_SIZE_ACTIVITY TestIdenfier = iota
+	// placeholder for start of test IDs
+	TEST_NULL_START TestIdenfier = iota
+	ZERO_SIZE_ACTIVITY
 	BIG_ACTIVITY
 	NO_ACTIVITY
 	TIMER
 	SIGNAL
 	QUERY
+	// placeholder for end of test IDs
+	TEST_NULL_END
 )
 
 func Workflow(ctx workflow.Context, test TestIdenfier) error {
@@ -104,4 +108,23 @@ func Workflow(ctx workflow.Context, test TestIdenfier) error {
 
 	logger.Info("Workflow completed.")
 	return nil
+}
+
+func GetTestName(id TestIdenfier) string {
+	switch id {
+	case ZERO_SIZE_ACTIVITY:
+		return "zero-size-activity"
+	case BIG_ACTIVITY:
+		return "big-activity"
+	case NO_ACTIVITY:
+		return "no-activity"
+	case TIMER:
+		return "timer"
+	case SIGNAL:
+		return "signal"
+	case QUERY:
+		return "query"
+	default:
+		return "undefined"
+	}
 }
