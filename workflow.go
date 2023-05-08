@@ -24,6 +24,7 @@ func Workflow(ctx workflow.Context, test TestIdenfier) error {
 	if test == QUERY {
 		queryType := "query"
 		err := workflow.SetQueryHandler(ctx, queryType, func() (string, error) {
+			logger.Debug("Received query request")
 			return "", nil
 		})
 		if err != nil {
@@ -80,7 +81,10 @@ func Workflow(ctx workflow.Context, test TestIdenfier) error {
 		case TIMER:
 			//err = workflow.Sleep(ctx, time.Duration(time.Second*1))
 			err = workflow.NewTimer(ctx, time.Duration(time.Second*1)).Get(ctx, nil)
+		case QUERY:
+			fallthrough
 		case NO_ACTIVITY:
+			fallthrough
 		default:
 			break
 		}
