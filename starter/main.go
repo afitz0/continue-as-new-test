@@ -31,7 +31,16 @@ func main() {
 			ID:        wId,
 			TaskQueue: "can-test-queue",
 		}
-		we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, starter.Workflow, test)
+
+		var we client.WorkflowRun
+		var err error
+
+		if test == starter.SIGNAL_WITH_START {
+			we, err = c.SignalWithStartWorkflow(context.Background(), wId, "signal", "", workflowOptions, starter.Workflow, test)
+		} else {
+			we, err = c.ExecuteWorkflow(context.Background(), workflowOptions, starter.Workflow, test)
+		}
+
 		switch test {
 		case starter.SIGNAL:
 			// Give enough time for the Workflow to start then yield back to the server.
@@ -48,7 +57,9 @@ func main() {
 				os.Exit(1)
 			}
 		}
+
 		if err != nil {
+			// All of these tests should be able to at least start successfully. Fatal if they don't.
 			logger.Error("Unable to execute workflow", err)
 			os.Exit(1)
 		}

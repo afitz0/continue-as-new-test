@@ -17,6 +17,7 @@ const (
 	NO_ACTIVITY
 	TIMER
 	SIGNAL
+	SIGNAL_WITH_START
 	QUERY
 	// placeholder for end of test IDs
 	TEST_NULL_END
@@ -122,6 +123,8 @@ func GetTestName(id TestIdenfier) string {
 		return "timer"
 	case SIGNAL:
 		return "signal"
+	case SIGNAL_WITH_START:
+		return "signal_with_start"
 	case QUERY:
 		return "query"
 	default:
