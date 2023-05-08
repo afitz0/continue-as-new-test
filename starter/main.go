@@ -2,23 +2,25 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"os"
 	"time"
 
 	"go.temporal.io/sdk/client"
+
+	"go.uber.org/zap/zapcore"
 
 	"starter"
 	"starter/zapadapter"
 )
 
 func main() {
+	logger := zapadapter.NewZapAdapter(zapadapter.NewZapLogger(zapcore.DebugLevel))
 	c, err := client.NewLazyClient(client.Options{
-		Logger: zapadapter.NewZapAdapter(
-			zapadapter.NewZapLogger()),
+		Logger: logger,
 	})
 	if err != nil {
-		log.Fatalln("Unable to create client", err)
+		logger.Error("Unable to create client", err)
+		os.Exit(1)
 	}
 	defer c.Close()
 
@@ -36,29 +38,36 @@ func main() {
 			time.Sleep(time.Duration(time.Second * 5))
 			err = c.SignalWorkflow(context.Background(), wId, we.GetRunID(), "signal", "")
 			if err != nil {
-				log.Fatalln("Unable to signal workflow", err)
+				logger.Error("Unable to signal workflow", err)
+				os.Exit(1)
 			}
 		case starter.QUERY:
 			_, err := c.QueryWorkflow(context.Background(), wId, we.GetRunID(), "query", "")
 			if err != nil {
-				log.Fatalln("Unable to query workflow", err)
+				logger.Error("Unable to query workflow", err)
+				os.Exit(1)
 			}
 		}
 		if err != nil {
-			log.Fatalln("Unable to execute workflow", err)
+			logger.Error("Unable to execute workflow", err)
+			os.Exit(1)
 		}
 
-		log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
-		log.Println("Awaiting workflow completion...")
+		logger.Info("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
+		logger.Info("Awaiting workflow completion...")
 		err = we.Get(context.Background(), nil)
 		if err != nil {
-			log.Fatalln("Unable to get workflow results", err)
+			logger.Error("Unable to get workflow results", err)
+			os.Exit(1)
 		}
 
 		desc, err := c.DescribeWorkflowExecution(context.Background(), wId, we.GetRunID())
 		histLength := desc.WorkflowExecutionInfo.GetHistoryLength()
 		histSize := desc.WorkflowExecutionInfo.GetHistorySizeBytes()
 
-		log.Println(fmt.Sprintf("Workflow running test (%v) finished with history length (%v) and size (%v bytes)", starter.GetTestName(test), histLength, histSize))
+		logger.Info("Workflow finished",
+			"test", starter.GetTestName(test),
+			"history length", histLength,
+			"history size", histSize)
 	}
 }
