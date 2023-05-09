@@ -82,7 +82,7 @@ func Workflow(ctx workflow.Context, test TestIdenfier) error {
 			// Configurably-sized activities. To hit the 50MB size limit well before the 50K length
 			// limit, if each activity returns 500KB of data, this workflow should terminate after
 			// ~100 activity executions.
-			err = workflow.ExecuteActivity(ctx, a.LargeReturnActivity, 512*1024).Get(ctx, nil)
+			err = workflow.ExecuteActivity(ctx, a.LargeReturnActivity, int(0.5*1024*1024)).Get(ctx, nil)
 		case TIMER:
 			//err = workflow.Sleep(ctx, time.Duration(time.Second*1))
 			err = workflow.NewTimer(ctx, time.Duration(time.Second*1)).Get(ctx, nil)
@@ -111,7 +111,7 @@ func Workflow(ctx workflow.Context, test TestIdenfier) error {
 	return nil
 }
 
-func GetTestName(id TestIdenfier) string {
+func TestIdToName(id TestIdenfier) string {
 	switch id {
 	case ZERO_SIZE_ACTIVITY:
 		return "zero-size-activity"
@@ -129,5 +129,26 @@ func GetTestName(id TestIdenfier) string {
 		return "query"
 	default:
 		return "undefined"
+	}
+}
+
+func TestNameToId(test string) TestIdenfier {
+	switch test {
+	case "zero-size-activity":
+		return ZERO_SIZE_ACTIVITY
+	case "big-activity":
+		return BIG_ACTIVITY
+	case "no-activity":
+		return NO_ACTIVITY
+	case "timer":
+		return TIMER
+	case "signal":
+		return SIGNAL
+	case "signal_with_start":
+		return SIGNAL_WITH_START
+	case "query":
+		return QUERY
+	default:
+		return TEST_NULL_START
 	}
 }
