@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"time"
@@ -30,19 +31,22 @@ func main() {
 	}
 	defer c.Close()
 
-	var testEnd starter.TestIdenfier
-	var testStart starter.TestIdenfier
-	if testFlag == "all" {
-		testStart = starter.TEST_NULL_START + 1
-		testEnd = starter.TEST_NULL_END - 1
-	} else {
-		testStart = starter.TestNameToId(testFlag)
-		testEnd = testStart
+	requestedTest := starter.Test{Name: testFlag}
+	if testFlag != "all" && requestedTest.GetId() == -1 {
+		logger.Error("Unknown test name")
+		os.Exit(1)
 	}
 
-	for i := testStart; i <= testEnd; i++ {
-		test := i
-		wId := "continue-as-new-test-" + starter.TestIdToName(test)
+	testStart := 0
+	testEnd := len(starter.Tests)
+	if testFlag != "all" {
+		testStart = requestedTest.GetId()
+		testEnd = testStart + 1
+	}
+
+	for i := testStart; i < testEnd; i++ {
+		test := starter.Tests[i]
+		wId := "continue-as-new-test-" + requestedTest.GetName()
 		workflowOptions := client.StartWorkflowOptions{
 			ID:        wId,
 			TaskQueue: "can-test-queue",
@@ -51,40 +55,50 @@ func main() {
 		var we client.WorkflowRun
 		var err error
 
-		if test == starter.SIGNAL_WITH_START {
+		if test == starter.TEST_SIGNAL_WITH_START {
 			we, err = c.SignalWithStartWorkflow(context.Background(), wId, "signal", "", workflowOptions, starter.Workflow, test)
 		} else {
 			we, err = c.ExecuteWorkflow(context.Background(), workflowOptions, starter.Workflow, test)
 		}
 
 		switch test {
-		case starter.SIGNAL:
+		case starter.TEST_ONE_SIGNAL:
 			// Give enough time for the Workflow to start then yield back to the server.
 			time.Sleep(time.Duration(time.Second * 5))
 			err = c.SignalWorkflow(context.Background(), wId, we.GetRunID(), "signal", "")
 			if err != nil {
-				logger.Error("Unable to signal workflow", err)
+				logger.Error("Unable to signal workflow", "error", err)
 				os.Exit(1)
 			}
-		case starter.QUERY:
+		case starter.TEST_ENDLESS_SIGNALS:
+			// Queue up 51K signals, understanding that many will be dropped.
+			for i := 0; i < 51*1024; i++ {
+				err = c.SignalWorkflow(context.Background(), wId, we.GetRunID(), "signal", fmt.Sprint(i))
+				if err != nil {
+					logger.Warn("Unable to signal workflow; this is expected", "error", err)
+					err = nil
+					break
+				}
+			}
+		case starter.TEST_QUERY:
 			_, err := c.QueryWorkflow(context.Background(), wId, we.GetRunID(), "query", "")
 			if err != nil {
-				logger.Error("Unable to query workflow", err)
+				logger.Error("Unable to query workflow", "error", err)
 				os.Exit(1)
 			}
 		}
 
 		if err != nil {
 			// All of these tests should be able to at least start successfully. Fatal if they don't.
-			logger.Error("Unable to execute workflow", err)
+			logger.Error("Unable to execute workflow", "error", err)
 			os.Exit(1)
 		}
 
-		logger.Info("Started workflow", "Test", starter.TestIdToName(test), "WorkflowID", we.GetID(), "RunID", we.GetRunID())
+		logger.Info("Started workflow", "Test", test.GetName(), "WorkflowID", we.GetID(), "RunID", we.GetRunID())
 		logger.Debug("Awaiting workflow completion...")
 		err = we.Get(context.Background(), nil)
 		if err != nil {
-			logger.Error("Unable to get workflow results; depending on the test this may be expected (e.g., Terminated due to exceeding history limits)", "error", err)
+			logger.Warn("Unable to get workflow results; this is probably expected (e.g., Terminated due to exceeding history limits)", "error", err)
 		}
 		logger.Debug("Workflow completed; now retrieving metadata")
 
@@ -100,7 +114,7 @@ func main() {
 		}
 
 		logger.Info("Workflow finished",
-			"test", starter.TestIdToName(test),
+			"test", test.GetName(),
 			"history length", histLength,
 			"history size (from API)", histSize,
 			"history size (downloaded from CLI)", histSizeFromCli)

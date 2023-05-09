@@ -7,26 +7,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type TestIdenfier int
-
-const (
-	// placeholder for start of test IDs
-	TEST_NULL_START TestIdenfier = iota
-	ZERO_SIZE_ACTIVITY
-	BIG_ACTIVITY
-	NO_ACTIVITY
-	TIMER
-	SIGNAL
-	SIGNAL_WITH_START
-	QUERY
-	// placeholder for end of test IDs
-	TEST_NULL_END
-)
-
-func Workflow(ctx workflow.Context, test TestIdenfier) error {
+func Workflow(ctx workflow.Context, test Test) error {
 	logger := workflow.GetLogger(ctx)
 
-	if test == QUERY {
+	if test == TEST_QUERY {
 		queryType := "query"
 		err := workflow.SetQueryHandler(ctx, queryType, func() (string, error) {
 			logger.Debug("Received query request")
@@ -41,7 +25,7 @@ func Workflow(ctx workflow.Context, test TestIdenfier) error {
 	logger.Info("Workflow started")
 
 	selector := workflow.NewSelector(ctx)
-	if test == SIGNAL {
+	if test == TEST_ONE_SIGNAL || test == TEST_ENDLESS_SIGNALS {
 		// Register signal handler
 		signalChannel := workflow.GetSignalChannel(ctx, "signal")
 
@@ -67,28 +51,28 @@ func Workflow(ctx workflow.Context, test TestIdenfier) error {
 	info := workflow.GetInfo(ctx)
 
 	iterations := 1
-	if test == ZERO_SIZE_ACTIVITY || test == BIG_ACTIVITY {
+	if test == TEST_ZERO_SIZE_ACTIVITY || test == TEST_BIG_ACTIVITY {
 		iterations = 50 * 1024
 	}
 	for i := 0; i < iterations; i++ {
 		var err error
 		switch test {
-		case ZERO_SIZE_ACTIVITY:
+		case TEST_ZERO_SIZE_ACTIVITY:
 			// (near) 0-sized activity. Expected that approximately 8,530 of these activities runs.
 			// Each activity execution generates 6 events: 3 for the workflow (scheduled, started,
 			// completed) and 3 for the activity (same).
 			err = workflow.ExecuteActivity(ctx, a.NilActivity).Get(ctx, nil)
-		case BIG_ACTIVITY:
+		case TEST_BIG_ACTIVITY:
 			// Configurably-sized activities. To hit the 50MB size limit well before the 50K length
 			// limit, if each activity returns 500KB of data, this workflow should terminate after
 			// ~100 activity executions.
 			err = workflow.ExecuteActivity(ctx, a.LargeReturnActivity, int(0.5*1024*1024)).Get(ctx, nil)
-		case TIMER:
+		case TEST_TIMER:
 			//err = workflow.Sleep(ctx, time.Duration(time.Second*1))
 			err = workflow.NewTimer(ctx, time.Duration(time.Second*1)).Get(ctx, nil)
-		case QUERY:
+		case TEST_QUERY:
 			fallthrough
-		case NO_ACTIVITY:
+		case TEST_NO_ACTIVITY:
 			fallthrough
 		default:
 			break
@@ -103,52 +87,16 @@ func Workflow(ctx workflow.Context, test TestIdenfier) error {
 		logger.Debug("Workflow event history size", "event history length", info.GetCurrentHistoryLength())
 	}
 
-	if test == SIGNAL {
+	// Block as necessary for signals
+	if test == TEST_ONE_SIGNAL {
 		selector.Select(ctx)
+	} else if test == TEST_ENDLESS_SIGNALS {
+		// Purposefully infinite so that we can trigger the history limit termination
+		for {
+			selector.Select(ctx)
+		}
 	}
 
 	logger.Info("Workflow completed.")
 	return nil
-}
-
-func TestIdToName(id TestIdenfier) string {
-	switch id {
-	case ZERO_SIZE_ACTIVITY:
-		return "zero-size-activity"
-	case BIG_ACTIVITY:
-		return "big-activity"
-	case NO_ACTIVITY:
-		return "no-activity"
-	case TIMER:
-		return "timer"
-	case SIGNAL:
-		return "signal"
-	case SIGNAL_WITH_START:
-		return "signal_with_start"
-	case QUERY:
-		return "query"
-	default:
-		return "undefined"
-	}
-}
-
-func TestNameToId(test string) TestIdenfier {
-	switch test {
-	case "zero-size-activity":
-		return ZERO_SIZE_ACTIVITY
-	case "big-activity":
-		return BIG_ACTIVITY
-	case "no-activity":
-		return NO_ACTIVITY
-	case "timer":
-		return TIMER
-	case "signal":
-		return SIGNAL
-	case "signal_with_start":
-		return SIGNAL_WITH_START
-	case "query":
-		return QUERY
-	default:
-		return TEST_NULL_START
-	}
 }
