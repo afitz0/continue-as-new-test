@@ -7,8 +7,9 @@ import (
 	"go.temporal.io/sdk/worker"
 
 	"go.uber.org/zap/zapcore"
-	"starter"
-	"starter/zapadapter"
+
+	can_test "github.com/afitz0/continue-as-new-test"
+	"github.com/afitz0/continue-as-new-test/zapadapter"
 )
 
 func main() {
@@ -23,8 +24,8 @@ func main() {
 
 	w := worker.New(c, "can-test-queue", worker.Options{})
 
-	a := &starter.Activities{}
-	w.RegisterWorkflow(starter.Workflow)
+	a := &can_test.Activities{}
+	w.RegisterWorkflow(can_test.Workflow)
 	w.RegisterActivity(a)
 
 	err = w.Run(worker.InterruptCh())

@@ -12,8 +12,8 @@ import (
 
 	"go.uber.org/zap/zapcore"
 
-	"starter"
-	"starter/zapadapter"
+	can_test "github.com/afitz0/continue-as-new-test"
+	"github.com/afitz0/continue-as-new-test/zapadapter"
 )
 
 func main() {
@@ -31,21 +31,21 @@ func main() {
 	}
 	defer c.Close()
 
-	requestedTest := starter.Test{Name: testFlag}
+	requestedTest := can_test.Test{Name: testFlag}
 	if testFlag != "all" && requestedTest.GetId() == -1 {
 		logger.Error("Unknown test name")
 		os.Exit(1)
 	}
 
 	testStart := 0
-	testEnd := len(starter.Tests)
+	testEnd := len(can_test.Tests)
 	if testFlag != "all" {
 		testStart = requestedTest.GetId()
 		testEnd = testStart + 1
 	}
 
 	for i := testStart; i < testEnd; i++ {
-		test := starter.Tests[i]
+		test := can_test.Tests[i]
 		wId := "continue-as-new-test-" + requestedTest.GetName()
 		workflowOptions := client.StartWorkflowOptions{
 			ID:        wId,
@@ -55,14 +55,14 @@ func main() {
 		var we client.WorkflowRun
 		var err error
 
-		if test == starter.TEST_SIGNAL_WITH_START {
-			we, err = c.SignalWithStartWorkflow(context.Background(), wId, "signal", "", workflowOptions, starter.Workflow, test)
+		if test == can_test.TEST_SIGNAL_WITH_START {
+			we, err = c.SignalWithStartWorkflow(context.Background(), wId, "signal", "", workflowOptions, can_test.Workflow, test)
 		} else {
-			we, err = c.ExecuteWorkflow(context.Background(), workflowOptions, starter.Workflow, test)
+			we, err = c.ExecuteWorkflow(context.Background(), workflowOptions, can_test.Workflow, test)
 		}
 
 		switch test {
-		case starter.TEST_ONE_SIGNAL:
+		case can_test.TEST_ONE_SIGNAL:
 			// Give enough time for the Workflow to start then yield back to the server.
 			time.Sleep(time.Duration(time.Second * 5))
 			err = c.SignalWorkflow(context.Background(), wId, we.GetRunID(), "signal", "")
@@ -70,7 +70,7 @@ func main() {
 				logger.Error("Unable to signal workflow", "error", err)
 				os.Exit(1)
 			}
-		case starter.TEST_ENDLESS_SIGNALS:
+		case can_test.TEST_ENDLESS_SIGNALS:
 			// Queue up 51K signals, understanding that many will be dropped.
 			for i := 0; i < 51*1024; i++ {
 				err = c.SignalWorkflow(context.Background(), wId, we.GetRunID(), "signal", fmt.Sprint(i))
@@ -80,7 +80,7 @@ func main() {
 					break
 				}
 			}
-		case starter.TEST_QUERY:
+		case can_test.TEST_QUERY:
 			_, err := c.QueryWorkflow(context.Background(), wId, we.GetRunID(), "query", "")
 			if err != nil {
 				logger.Error("Unable to query workflow", "error", err)

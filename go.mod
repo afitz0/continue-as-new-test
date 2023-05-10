@@ -1,4 +1,4 @@
-module starter
+module "github.com/afitz0/continue-as-new-test"
 
 go 1.20
 
