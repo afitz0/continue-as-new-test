@@ -46,4 +46,4 @@ Workflows beyond the expected "Terminated Due to Exceeding Limits."
 * Many of the above questions aren't directly answered. Add counter outputs for things like "how
   many activites were actually run"
 * Make `--test` accept CSV
-
+* Fix or remove getting the history size via the CLI
