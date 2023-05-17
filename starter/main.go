@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	logger := zapadapter.NewZapAdapter(zapadapter.NewZapLogger(zapcore.DebugLevel))
-	c, err := client.NewLazyClient(client.Options{
+	c, err := client.Dial(client.Options{
 		Logger: logger,
 	})
 	if err != nil {

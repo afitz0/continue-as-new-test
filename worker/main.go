@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	c, err := client.NewLazyClient(client.Options{
+	c, err := client.Dial(client.Options{
 		Logger: zapadapter.NewZapAdapter(
 			zapadapter.NewZapLogger(zapcore.WarnLevel)),
 	})
