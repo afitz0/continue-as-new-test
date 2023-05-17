@@ -18,6 +18,6 @@ func (a *Activities) LargeReturnActivity(bytes int) ([]int, error) {
 }
 
 func (a *Activities) AsyncActivity(id int) error {
-	fmt.Sprintln("Running async activity; ID is: ", id)
+	fmt.Println("Running async activity; ID is: ", id)
 	return nil
 }

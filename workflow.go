@@ -80,6 +80,8 @@ func Workflow(ctx workflow.Context, test Test) (err error) {
 		case TEST_CAN_ABANDONED_ACTIVITIES:
 			// Async start the activity, will continue-as-new later
 			_ = workflow.ExecuteActivity(ctx, a.AsyncActivity, i)
+			// Sleeping between activities changes the behavior of this test.
+			//workflow.Sleep(ctx, time.Duration(time.Second*1))
 		case TEST_QUERY:
 			fallthrough
 		case TEST_NO_ACTIVITY:

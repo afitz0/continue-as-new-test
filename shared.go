@@ -1,5 +1,7 @@
 package continue_as_new_test
 
+const TASK_QUEUE_NAME = "can-test-queue"
+
 type Test struct {
 	Name string
 }

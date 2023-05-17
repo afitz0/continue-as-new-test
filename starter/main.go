@@ -49,7 +49,7 @@ func main() {
 		wId := "continue-as-new-test-" + requestedTest.GetName()
 		workflowOptions := client.StartWorkflowOptions{
 			ID:        wId,
-			TaskQueue: "can-test-queue",
+			TaskQueue: can_test.TASK_QUEUE_NAME,
 		}
 
 		var we client.WorkflowRun

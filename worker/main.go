@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 
 	"go.temporal.io/sdk/client"
@@ -13,6 +15,10 @@ import (
 )
 
 func main() {
+	var workerCount int
+	flag.IntVar(&workerCount, "n", 1, "How many worker threads to start. Default: 1")
+	flag.Parse()
+
 	c, err := client.Dial(client.Options{
 		Logger: zapadapter.NewZapAdapter(
 			zapadapter.NewZapLogger(zapcore.WarnLevel)),
@@ -22,14 +28,29 @@ func main() {
 	}
 	defer c.Close()
 
-	w := worker.New(c, "can-test-queue", worker.Options{})
+	var pool []worker.Worker
 
-	a := &can_test.Activities{}
-	w.RegisterWorkflow(can_test.Workflow)
-	w.RegisterActivity(a)
+	log.Println("Starting", workerCount, "workers")
+	for i := 0; i < workerCount; i++ {
+		w := worker.New(c, can_test.TASK_QUEUE_NAME, worker.Options{
+			Identity: fmt.Sprintf("worker-%v", i),
+		})
 
-	err = w.Run(worker.InterruptCh())
-	if err != nil {
-		log.Fatalln("Unable to start worker", err)
+		a := &can_test.Activities{}
+		w.RegisterWorkflow(can_test.Workflow)
+		w.RegisterActivity(a)
+
+		go func() {
+			err := w.Run(nil)
+			if err != nil {
+				log.Fatalln("Unable to start worker", err)
+			}
+			pool = append(pool, w)
+		}()
+	}
+
+	<-worker.InterruptCh()
+	for _, w := range pool {
+		w.Stop()
 	}
 }
