@@ -17,11 +17,13 @@ The currently implemented scenarios are:
   many times can it run before hitting the history *size* limit?
 * **"timer"**: How many events does a Workflow with a single Timer generate?
 * **"signal"**: How many events does a Workflow that blocks waiting for a single Signal generate?
-* **"signal_with_start"**: How many events does a Workflow that's started with "SignalWithStart"
+* **"signal-with-start"**: How many events does a Workflow that's started with "SignalWithStart"
   generate?
 * **"endless-signals"**: For a Workflow that loops infinitely handling as many Signals as come in,
   as fast as it can, how many can it handle before hitting the history *length* limit?
 * **"query"**: Do Queries generate any Events?
+* **abandoned-activities**: What happens if a Workflow schedules some async Activities and then
+  Continues As New? What happens to those Activities?
 
 All of the above presume that everything happens successfully: no failed Activities and no failed
 Workflows beyond the expected "Terminated Due to Exceeding Limits."

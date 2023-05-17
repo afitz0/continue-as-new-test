@@ -7,12 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func Workflow(ctx workflow.Context, test Test) error {
+func Workflow(ctx workflow.Context, test Test) (err error) {
 	logger := workflow.GetLogger(ctx)
 
 	if test == TEST_QUERY {
 		queryType := "query"
-		err := workflow.SetQueryHandler(ctx, queryType, func() (string, error) {
+		err = workflow.SetQueryHandler(ctx, queryType, func() (string, error) {
 			logger.Debug("Received query request")
 			return "", nil
 		})
@@ -53,7 +53,14 @@ func Workflow(ctx workflow.Context, test Test) error {
 	iterations := 1
 	if test == TEST_ZERO_SIZE_ACTIVITY || test == TEST_BIG_ACTIVITY {
 		iterations = 50 * 1024
+	} else if test == TEST_CAN_ABANDONED_ACTIVITIES {
+		iterations = 10
+		if info.ContinuedExecutionRunID != "" {
+			// In the continue workflow, don't start any new activities.
+			iterations = 0
+		}
 	}
+
 	for i := 0; i < iterations; i++ {
 		var err error
 		switch test {
@@ -70,6 +77,9 @@ func Workflow(ctx workflow.Context, test Test) error {
 		case TEST_TIMER:
 			//err = workflow.Sleep(ctx, time.Duration(time.Second*1))
 			err = workflow.NewTimer(ctx, time.Duration(time.Second*1)).Get(ctx, nil)
+		case TEST_CAN_ABANDONED_ACTIVITIES:
+			// Async start the activity, will continue-as-new later
+			_ = workflow.ExecuteActivity(ctx, a.NilActivity)
 		case TEST_QUERY:
 			fallthrough
 		case TEST_NO_ACTIVITY:
@@ -94,6 +104,14 @@ func Workflow(ctx workflow.Context, test Test) error {
 		// Purposefully infinite so that we can trigger the history limit termination
 		for {
 			selector.Select(ctx)
+		}
+	}
+
+	// Continue-As-New, if the test requires it.
+	if test == TEST_CAN_ABANDONED_ACTIVITIES {
+		// For this test, only allow CAN once.
+		if info.ContinuedExecutionRunID == "" {
+			return workflow.NewContinueAsNewError(ctx, Workflow, test)
 		}
 	}
 
