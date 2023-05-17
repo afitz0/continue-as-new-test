@@ -79,7 +79,7 @@ func Workflow(ctx workflow.Context, test Test) (err error) {
 			err = workflow.NewTimer(ctx, time.Duration(time.Second*1)).Get(ctx, nil)
 		case TEST_CAN_ABANDONED_ACTIVITIES:
 			// Async start the activity, will continue-as-new later
-			_ = workflow.ExecuteActivity(ctx, a.NilActivity)
+			_ = workflow.ExecuteActivity(ctx, a.AsyncActivity, i)
 		case TEST_QUERY:
 			fallthrough
 		case TEST_NO_ACTIVITY:
