@@ -10,7 +10,7 @@ import (
 func Workflow(ctx workflow.Context, test Test) (err error) {
 	logger := workflow.GetLogger(ctx)
 
-	if test == TEST_QUERY {
+	if test == TestQuery {
 		queryType := "query"
 		err = workflow.SetQueryHandler(ctx, queryType, func() (string, error) {
 			logger.Debug("Received query request")
@@ -25,7 +25,7 @@ func Workflow(ctx workflow.Context, test Test) (err error) {
 	logger.Info("Workflow started")
 
 	selector := workflow.NewSelector(ctx)
-	if test == TEST_ONE_SIGNAL || test == TEST_ENDLESS_SIGNALS {
+	if test == TestOneSignal || test == TestEndlessSignals {
 		// Register signal handler
 		signalChannel := workflow.GetSignalChannel(ctx, "signal")
 
@@ -51,9 +51,9 @@ func Workflow(ctx workflow.Context, test Test) (err error) {
 	info := workflow.GetInfo(ctx)
 
 	iterations := 1
-	if test == TEST_ZERO_SIZE_ACTIVITY || test == TEST_BIG_ACTIVITY {
+	if test == TestZeroSizeActivity || test == TestBigActivity {
 		iterations = 50 * 1024
-	} else if test == TEST_CAN_ABANDONED_ACTIVITIES {
+	} else if test == TestCANAbandonedActivities {
 		iterations = 10
 		if info.ContinuedExecutionRunID != "" {
 			// In the continue workflow, don't start any new activities.
@@ -64,27 +64,27 @@ func Workflow(ctx workflow.Context, test Test) (err error) {
 	for i := 0; i < iterations; i++ {
 		var err error
 		switch test {
-		case TEST_ZERO_SIZE_ACTIVITY:
+		case TestZeroSizeActivity:
 			// (near) 0-sized activity. Expected that approximately 8,530 of these activities runs.
 			// Each activity execution generates 6 events: 3 for the workflow (scheduled, started,
 			// completed) and 3 for the activity (same).
 			err = workflow.ExecuteActivity(ctx, a.NilActivity).Get(ctx, nil)
-		case TEST_BIG_ACTIVITY:
+		case TestBigActivity:
 			// Configurably-sized activities. To hit the 50MB size limit well before the 50K length
 			// limit, if each activity returns 500KB of data, this workflow should terminate after
 			// ~100 activity executions.
 			err = workflow.ExecuteActivity(ctx, a.LargeReturnActivity, int(0.5*1024*1024)).Get(ctx, nil)
-		case TEST_TIMER:
+		case TestTimer:
 			//err = workflow.Sleep(ctx, time.Duration(time.Second*1))
 			err = workflow.NewTimer(ctx, time.Duration(time.Second*1)).Get(ctx, nil)
-		case TEST_CAN_ABANDONED_ACTIVITIES:
+		case TestCANAbandonedActivities:
 			// Async start the activity, will continue-as-new later
 			_ = workflow.ExecuteActivity(ctx, a.AsyncActivity, i)
 			// Sleeping between activities changes the behavior of this test.
 			//workflow.Sleep(ctx, time.Duration(time.Second*1))
-		case TEST_QUERY:
+		case TestQuery:
 			fallthrough
-		case TEST_NO_ACTIVITY:
+		case TestGoActivity:
 			fallthrough
 		default:
 			break
@@ -100,9 +100,9 @@ func Workflow(ctx workflow.Context, test Test) (err error) {
 	}
 
 	// Block as necessary for signals
-	if test == TEST_ONE_SIGNAL {
+	if test == TestOneSignal {
 		selector.Select(ctx)
-	} else if test == TEST_ENDLESS_SIGNALS {
+	} else if test == TestEndlessSignals {
 		// Purposefully infinite so that we can trigger the history limit termination
 		for {
 			selector.Select(ctx)
@@ -110,7 +110,7 @@ func Workflow(ctx workflow.Context, test Test) (err error) {
 	}
 
 	// Continue-As-New, if the test requires it.
-	if test == TEST_CAN_ABANDONED_ACTIVITIES {
+	if test == TestCANAbandonedActivities {
 		// For this test, only allow CAN once.
 		if info.ContinuedExecutionRunID == "" {
 			return workflow.NewContinueAsNewError(ctx, Workflow, test)

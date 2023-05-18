@@ -49,20 +49,20 @@ func main() {
 		wId := "continue-as-new-test-" + requestedTest.GetName()
 		workflowOptions := client.StartWorkflowOptions{
 			ID:        wId,
-			TaskQueue: can_test.TASK_QUEUE_NAME,
+			TaskQueue: can_test.TaskQueueName,
 		}
 
 		var we client.WorkflowRun
 		var err error
 
-		if test == can_test.TEST_SIGNAL_WITH_START {
+		if test == can_test.TestSignalWithStart {
 			we, err = c.SignalWithStartWorkflow(context.Background(), wId, "signal", "", workflowOptions, can_test.Workflow, test)
 		} else {
 			we, err = c.ExecuteWorkflow(context.Background(), workflowOptions, can_test.Workflow, test)
 		}
 
 		switch test {
-		case can_test.TEST_ONE_SIGNAL:
+		case can_test.TestOneSignal:
 			// Give enough time for the Workflow to start then yield back to the server.
 			time.Sleep(time.Duration(time.Second * 5))
 			err = c.SignalWorkflow(context.Background(), wId, we.GetRunID(), "signal", "")
@@ -70,7 +70,7 @@ func main() {
 				logger.Error("Unable to signal workflow", "error", err)
 				os.Exit(1)
 			}
-		case can_test.TEST_ENDLESS_SIGNALS:
+		case can_test.TestEndlessSignals:
 			// Queue up 51K signals, understanding that many will be dropped.
 			for i := 0; i < 51*1024; i++ {
 				err = c.SignalWorkflow(context.Background(), wId, we.GetRunID(), "signal", fmt.Sprint(i))
@@ -80,7 +80,7 @@ func main() {
 					break
 				}
 			}
-		case can_test.TEST_QUERY:
+		case can_test.TestQuery:
 			_, err := c.QueryWorkflow(context.Background(), wId, we.GetRunID(), "query", "")
 			if err != nil {
 				logger.Error("Unable to query workflow", "error", err)

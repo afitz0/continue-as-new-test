@@ -32,7 +32,7 @@ func main() {
 
 	log.Println("Starting", workerCount, "workers")
 	for i := 0; i < workerCount; i++ {
-		w := worker.New(c, can_test.TASK_QUEUE_NAME, worker.Options{
+		w := worker.New(c, can_test.TaskQueueName, worker.Options{
 			Identity: fmt.Sprintf("worker-%v", i),
 		})
 
