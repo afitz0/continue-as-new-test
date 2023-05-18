@@ -31,7 +31,7 @@ var (
 	TEST_CAN_ABANDONED_ACTIVITIES = Test{"abandoned-activities"}
 )
 
-var Tests = [...]Test{
+var Tests = []Test{
 	TEST_ZERO_SIZE_ACTIVITY,
 	TEST_BIG_ACTIVITY,
 	TEST_NO_ACTIVITY,
