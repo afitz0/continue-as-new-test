@@ -1,4 +1,4 @@
-package continue_as_new_test
+package continue_as_new
 
 import (
 	"time"

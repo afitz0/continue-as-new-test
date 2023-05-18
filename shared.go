@@ -1,14 +1,8 @@
-package continue_as_new_test
+package continue_as_new
 
 const TaskQueueName = "can-test-queue"
 
-type Test struct {
-	Name string
-}
-
-func (t Test) GetName() string {
-	return t.Name
-}
+type Test string
 
 func (t Test) GetId() int {
 	for i, value := range Tests {
@@ -19,16 +13,16 @@ func (t Test) GetId() int {
 	return -1
 }
 
-var (
-	TestZeroSizeActivity       = Test{"zero-size-activity"}
-	TestBigActivity            = Test{"big-activity"}
-	TestGoActivity             = Test{"no-activity"}
-	TestTimer                  = Test{"timer"}
-	TestOneSignal              = Test{"signal"}
-	TestSignalWithStart        = Test{"signal-with-start"}
-	TestEndlessSignals         = Test{"endless-signals"}
-	TestQuery                  = Test{"query"}
-	TestCANAbandonedActivities = Test{"abandoned-activities"}
+const (
+	TestZeroSizeActivity       Test = "zero-size-activity"
+	TestBigActivity            Test = "big-activity"
+	TestGoActivity             Test = "no-activity"
+	TestTimer                  Test = "timer"
+	TestOneSignal              Test = "signal"
+	TestSignalWithStart        Test = "signal-with-start"
+	TestEndlessSignals         Test = "endless-signals"
+	TestQuery                  Test = "query"
+	TestCANAbandonedActivities Test = "abandoned-activities"
 )
 
 var Tests = []Test{

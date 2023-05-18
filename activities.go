@@ -1,4 +1,4 @@
-package continue_as_new_test
+package continue_as_new
 
 import "fmt"
 
@@ -9,7 +9,7 @@ func (a *Activities) NilActivity() error {
 }
 
 func (a *Activities) LargeReturnActivity(count int) ([]int, error) {
-	return make([]int, bytes/2), nil
+	return make([]int, count/2), nil
 }
 
 func (a *Activities) AsyncActivity(id int) error {

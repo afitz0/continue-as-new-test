@@ -31,7 +31,7 @@ func main() {
 	}
 	defer c.Close()
 
-	requestedTest := can_test.Test{Name: testFlag}
+	requestedTest := can_test.Test(testFlag)
 	if testFlag != "all" && requestedTest.GetId() == -1 {
 		logger.Error("Unknown test name")
 		os.Exit(1)
@@ -46,7 +46,7 @@ func main() {
 
 	for i := testStart; i < testEnd; i++ {
 		test := can_test.Tests[i]
-		wId := "continue-as-new-test-" + requestedTest.GetName()
+		wId := "continue-as-new-test-" + string(requestedTest)
 		workflowOptions := client.StartWorkflowOptions{
 			ID:        wId,
 			TaskQueue: can_test.TaskQueueName,
@@ -94,7 +94,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		logger.Info("Started workflow", "Test", test.GetName(), "WorkflowID", we.GetID(), "RunID", we.GetRunID())
+		logger.Info("Started workflow", "Test", test, "WorkflowID", we.GetID(), "RunID", we.GetRunID())
 		logger.Debug("Awaiting workflow completion...")
 		err = we.Get(context.Background(), nil)
 		if err != nil {
@@ -114,7 +114,7 @@ func main() {
 		}
 
 		logger.Info("Workflow finished",
-			"test", test.GetName(),
+			"test", test,
 			"history length", histLength,
 			"history size (from API)", histSize,
 			"history size (downloaded from CLI)", histSizeFromCli)
